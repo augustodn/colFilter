@@ -7,8 +7,8 @@ def make_pearson_correlation(companies_subset, input_candidates):
 
     # For every company group in our subset
     for company, group in companies_subset:
-        # Let's start by sorting the input and current company group so the values aren't 
-        # mixed up later on
+        # Let's start by sorting the input and current company group so the values 
+        # aren't mixed up later on
         group = group.sort_values(by='candidateId')
         input_candidates = input_candidates.sort_values(by='candidateId')
 
@@ -60,3 +60,20 @@ def make_ratings_list(companies, max_num_employees, candidates, max_score):
     ratings = pd.DataFrame(ratings, columns=['companyId', 'candidateId', 'score'])
 
     return ratings
+
+def make_input_list(max_num_employees, candidates, max_score):
+
+    input_candidates = []
+
+    size = np.random.randint(max_num_employees)
+    candidates_to_rank = np.random.randint(candidates, size=size)
+    # Get a list of unique candidates
+    candidates_to_rank = list(set(candidates_to_rank))
+
+    for candidate in candidates_to_rank:
+        score = np.random.randint(low=1, high=max_score+1)
+        input_candidates.append([candidate, score])
+
+    input_candidates = pd.DataFrame(input_candidates,
+                                    columns=['candidateId', 'score'])
+    return input_candidates

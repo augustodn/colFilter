@@ -15,32 +15,24 @@ ratings = helper.make_ratings_list(COMPANIES, MAX_NUM_EMPLOYEES,
 ratings.to_csv('ratings.csv', index=False)
 """
 ratings = pd.read_csv('ratings.csv')
-
 # Let's rank some candidates as the recommender input
-input_candidates = []
-size = np.random.randint(MAX_NUM_EMPLOYEES)
-candidates_to_rank = np.random.randint(CANDIDATES, size=size)
-# Get a list of unique candidates
-candidates_to_rank = list(set(candidates_to_rank))
-
-for candidate in candidates_to_rank:
-    score = np.random.randint(low=1, high=MAX_SCORE+1)
-    input_candidates.append([candidate, score])
-
-input_candidates = pd.DataFrame(input_candidates,
-                                columns=['candidateId', 'score'])
-
+"""
+# Uncomment block if you want to generate a ratings list
+input_candidates = helper.make_input_list(MAX_NUM_EMPLOYEES, CANDIDATES, MAX_SCORE)
+input_candidates.to_csv('input_candidates.csv', index=False)
+"""
+input_candidates = pd.read_csv('input_candidates.csv')
 # Filter the companies who have ranked the candidates
 companies_subset = ratings[ratings['candidateId'].isin(
                         input_candidates['candidateId'].tolist())]
 companies_subset = companies_subset.groupby(['companyId'])
 
-# Sort by companies which shares the most candidates in common
+# Sort by companies which share the most candidates in common
 companies_subset = sorted(companies_subset,
                           key=lambda x: len(x[1]),
                           reverse=True)
 
-# Compare with the top 100 results
+# Compare with the top results
 if len(companies_subset) > COMPANIES_SUBSET:
     companies_subset = companies_subset[0:COMPANIES_SUBSET]
 
@@ -76,18 +68,18 @@ temp_top_companies.columns = ['sum_similarityIndex','sum_weightedScore']
 # Create the recommendation dataframe
 recommendations = pd.DataFrame()
 # Now we take the weighted average
-recommendations['recomScore'] = temp_top_companies['sum_weightedScore'] / \
+#FIXME: Changed matematical operation: * instead of /
+recommendations['recomScore'] = temp_top_companies['sum_weightedScore'] * \
                                   temp_top_companies['sum_similarityIndex']
 recommendations['candidateId'] = temp_top_companies.index
 # Order by the highest score
 recommendations = recommendations.sort_values(by='recomScore',
                                                   ascending=False)
-print(recommendations.head())
+print(recommendations.head(10))
 
-dbg = """
-# Check if there are recommended candidates in the input dataframe
-index = recommendations.head().index[0]
-candidate = recommendations.loc[index, 'candidateId']
-print('\n\n')
-print(input_candidates.loc[input_candidates.candidateId == candidate])
-"""
+# Check the actual input_candidates in the recommendations
+# TODO: Clean the actual employees from input list
+print('==================================================')
+print('Actual candidates in the input list\n')
+print(recommendations[recommendations['candidateId']\
+                .isin(input_candidates['candidateId'].tolist())])
