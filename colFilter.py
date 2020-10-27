@@ -18,6 +18,7 @@ ratings.to_csv('ratings.csv', index=False)
 ratings = pd.read_csv('ratings.csv')
 
 # Let's rank some candidates as the recommender input
+# These candidates are the current company employees
 """
 # Uncomment block if you want to generate a ratings list
 input_candidates = helper.make_input_list(
@@ -48,6 +49,9 @@ correlated_companies = pd.DataFrame.from_dict(correlated_companies,
                                               orient='index')
 correlated_companies.columns = ['similarityIndex']
 correlated_companies['companyId'] = correlated_companies.index
+no_correlation = correlated_companies.loc[
+                        correlated_companies.similarityIndex == 0]
+correlated_companies = correlated_companies.drop(no_correlation.index)
 
 # Get the 50 most similar companies and sort them
 top_companies = correlated_companies.sort_values(

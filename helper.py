@@ -3,7 +3,7 @@ import numpy as np
 from scipy import stats
 
 def make_pearson_correlation(companies_subset, input_candidates):
-    pearsonCorrelationDict = {}
+    pearson_correlation = {}
 
     # For every company group in our subset
     for company, group in companies_subset:
@@ -12,36 +12,46 @@ def make_pearson_correlation(companies_subset, input_candidates):
         group = group.sort_values(by='candidateId')
         input_candidates = input_candidates.sort_values(by='candidateId')
 
-        # Get the N for the formula
-        nRatings = len(group)
-        # Get the review scores for the candidates that both copmanies have in common
-        temp_df = input_candidates[input_candidates['candidateId'].\
-                    isin(group['candidateId'].tolist())]
-        # And then store them in a temporary buffer variable in a list format to 
-        # facilitate future calculations
-        tempRatingList = temp_df['score'].tolist()
-        # Let's also put the current user group reviews in a list format
-        tempGroupList = group['score'].tolist()
+        # Get the review scores for candidates that appears in both companies
+        # DEBUG: 
+        # ir = input_ratings
+        input_ratings = input_candidates[input_candidates['candidateId'].\
+                            isin(group['candidateId'].tolist())]
+        # Make a rating list with **only** candidates present in both groups
+        # to perform the pearson correlation
+        group_ratings = group[group.candidateId.isin(
+            input_ratings.candidateId.tolist())]
+        group_ratings = group_ratings['score'].tolist()
+        input_ratings = input_ratings['score'].tolist()
 
+        """
+        # DEBUG:
+        temp_df = group_ratings.merge(ir,
+                                      left_on='candidateId',
+                                      right_on='candidateId',
+                                      how='inner')
+        print(temp_df)
         # Let the lists have the same length
-        group_len = len(tempGroupList)
-        rating_len = len(tempRatingList)
+        group_len = len(group_ratings)
+        rating_len = len(input_ratings)
 
         if group_len > rating_len:
-            tempGroupList = tempGroupList[:rating_len]
+            print('Not same length')
+            group_ratings = group_ratings[:rating_len]
         if rating_len > group_len:
-            tempRatingList = tempRatingList[:group_len]
+            print('Not same length')
+            input_ratings = input_ratings[:group_len]
+        """
         # Make the correlation
-        if len(tempGroupList) > 10:
-            correlation_factor, _ = stats.pearsonr(tempRatingList, tempGroupList)
+        if len(input_ratings) > 3:
+            correlation_factor, _ = stats.pearsonr(input_ratings, group_ratings)
         else:
-            # If the lists have only one element correlation cannot be
-            # determined
+            # If the lists have a few elements correlation cannot be determined
             correlation_factor= 0
 
-        pearsonCorrelationDict[company] = correlation_factor
+        pearson_correlation[company] = correlation_factor
 
-    return pearsonCorrelationDict
+    return pearson_correlation
 
 def make_ratings_list(companies, max_num_employees, candidates, max_score):
 
