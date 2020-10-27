@@ -3,6 +3,7 @@ import numpy as np
 from scipy import stats
 
 def make_pearson_correlation(companies_subset, input_candidates):
+    MIN_MATCHING_LENGTH = 10
     pearson_correlation = {}
 
     # For every company group in our subset
@@ -13,8 +14,6 @@ def make_pearson_correlation(companies_subset, input_candidates):
         input_candidates = input_candidates.sort_values(by='candidateId')
 
         # Get the review scores for candidates that appears in both companies
-        # DEBUG: 
-        # ir = input_ratings
         input_ratings = input_candidates[input_candidates['candidateId'].\
                             isin(group['candidateId'].tolist())]
         # Make a rating list with **only** candidates present in both groups
@@ -24,26 +23,8 @@ def make_pearson_correlation(companies_subset, input_candidates):
         group_ratings = group_ratings['score'].tolist()
         input_ratings = input_ratings['score'].tolist()
 
-        """
-        # DEBUG:
-        temp_df = group_ratings.merge(ir,
-                                      left_on='candidateId',
-                                      right_on='candidateId',
-                                      how='inner')
-        print(temp_df)
-        # Let the lists have the same length
-        group_len = len(group_ratings)
-        rating_len = len(input_ratings)
-
-        if group_len > rating_len:
-            print('Not same length')
-            group_ratings = group_ratings[:rating_len]
-        if rating_len > group_len:
-            print('Not same length')
-            input_ratings = input_ratings[:group_len]
-        """
         # Make the correlation
-        if len(input_ratings) > 3:
+        if len(input_ratings) > MIN_MATCHING_LENGTH:
             correlation_factor, _ = stats.pearsonr(input_ratings, group_ratings)
         else:
             # If the lists have a few elements correlation cannot be determined

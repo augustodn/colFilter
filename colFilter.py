@@ -8,6 +8,7 @@ CANDIDATES = 5000
 MAX_NUM_EMPLOYEES = 500
 MAX_SCORE = 10
 COMPANIES_SUBSET = 100
+TOP_SIMILAR_COMP = 50
 
 """
 # Uncomment block if you want to generate a ratings list
@@ -49,13 +50,15 @@ correlated_companies = pd.DataFrame.from_dict(correlated_companies,
                                               orient='index')
 correlated_companies.columns = ['similarityIndex']
 correlated_companies['companyId'] = correlated_companies.index
+
+# Remove companies with negative or no correlation
 no_correlation = correlated_companies.loc[
-                        correlated_companies.similarityIndex == 0]
+                        correlated_companies.similarityIndex <= 0]
 correlated_companies = correlated_companies.drop(no_correlation.index)
 
-# Get the 50 most similar companies and sort them
+# Get the most similar companies and sort them
 top_companies = correlated_companies.sort_values(
-                    by='similarityIndex', ascending=False)[0:50]
+                    by='similarityIndex', ascending=False)[0:TOP_SIMILAR_COMP]
 
 top_companies = top_companies.merge(ratings,
                             left_on='companyId',
@@ -83,7 +86,7 @@ recommendations['candidateId'] = temp_top_companies.index
 recommendations = recommendations.sort_values(by='recomScore',
                                                   ascending=False)
 
-# Check the actual input_candidates in the recommendations
+# Clean the actual input_candidates from the recommendations
 actual_employees = recommendations[recommendations['candidateId']\
                    .isin(input_candidates['candidateId'].tolist())]
 recommendations = recommendations.drop(actual_employees.index)
