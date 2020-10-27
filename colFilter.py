@@ -8,6 +8,7 @@ CANDIDATES = 5000
 MAX_NUM_EMPLOYEES = 500
 MAX_SCORE = 10
 COMPANIES_SUBSET = 100
+
 """
 # Uncomment block if you want to generate a ratings list
 ratings = helper.make_ratings_list(COMPANIES, MAX_NUM_EMPLOYEES,
@@ -15,13 +16,16 @@ ratings = helper.make_ratings_list(COMPANIES, MAX_NUM_EMPLOYEES,
 ratings.to_csv('ratings.csv', index=False)
 """
 ratings = pd.read_csv('ratings.csv')
+
 # Let's rank some candidates as the recommender input
 """
 # Uncomment block if you want to generate a ratings list
-input_candidates = helper.make_input_list(MAX_NUM_EMPLOYEES, CANDIDATES, MAX_SCORE)
+input_candidates = helper.make_input_list(
+    MAX_NUM_EMPLOYEES, CANDIDATES, MAX_SCORE)
 input_candidates.to_csv('input_candidates.csv', index=False)
 """
 input_candidates = pd.read_csv('input_candidates.csv')
+
 # Filter the companies who have ranked the candidates
 companies_subset = ratings[ratings['candidateId'].isin(
                         input_candidates['candidateId'].tolist())]
@@ -44,9 +48,8 @@ correlated_companies = pd.DataFrame.from_dict(correlated_companies,
                                               orient='index')
 correlated_companies.columns = ['similarityIndex']
 correlated_companies['companyId'] = correlated_companies.index
-correlated_companies.index = range(len(correlated_companies))
 
-# Get the 50 most similar companies to the input candidates subset
+# Get the 50 most similar companies and sort them
 top_companies = correlated_companies.sort_values(
                     by='similarityIndex', ascending=False)[0:50]
 
@@ -54,32 +57,31 @@ top_companies = top_companies.merge(ratings,
                             left_on='companyId',
                             right_on='companyId',
                             how='inner')
+
 # Weight the scores by the similarity index (ranging from 0 to 1)
 top_companies['weightedScore'] = top_companies['similarityIndex'] * \
                                  top_companies['score']
 top_companies.dropna(inplace=True)
 
-# Sum the similarity index and weighted score per each candidate
+# Sum the similarity index and weighted score per each candidate ocurrence
 # the ones which appears the most will have a higher total value
 temp_top_companies = top_companies.groupby('candidateId')\
                                   .sum()[['similarityIndex','weightedScore']]
 temp_top_companies.columns = ['sum_similarityIndex','sum_weightedScore']
 
-# Create the recommendation dataframe
 recommendations = pd.DataFrame()
 # Now we take the weighted average
-#FIXME: Changed matematical operation: * instead of /
+# Changed matematical operation: * instead of /
 recommendations['recomScore'] = temp_top_companies['sum_weightedScore'] * \
-                                  temp_top_companies['sum_similarityIndex']
+                                temp_top_companies['sum_similarityIndex']
 recommendations['candidateId'] = temp_top_companies.index
 # Order by the highest score
 recommendations = recommendations.sort_values(by='recomScore',
                                                   ascending=False)
-print(recommendations.head(10))
 
 # Check the actual input_candidates in the recommendations
-# TODO: Clean the actual employees from input list
-print('==================================================')
-print('Actual candidates in the input list\n')
-print(recommendations[recommendations['candidateId']\
-                .isin(input_candidates['candidateId'].tolist())])
+actual_employees = recommendations[recommendations['candidateId']\
+                   .isin(input_candidates['candidateId'].tolist())]
+recommendations = recommendations.drop(actual_employees.index)
+
+print(recommendations.head(10))
