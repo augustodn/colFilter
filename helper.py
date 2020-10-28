@@ -6,7 +6,7 @@ def make_pearson_correlation(companies_subset, input_candidates):
     MIN_MATCHING_LENGTH = 10
     pearson_correlation = {}
 
-    # For every company group in our subset
+    # company: A number for each one. Group: A dset with the employees
     for company, group in companies_subset:
         # Let's start by sorting the input and current company group so the values 
         # aren't mixed up later on
